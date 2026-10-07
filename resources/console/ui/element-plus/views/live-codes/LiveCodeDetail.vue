@@ -118,7 +118,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { http } from '@scrm/shared'
+import { http, moduleApiPrefix } from '@multi-tenant-saas/console/shared/http'
 
 defineOptions({ name: 'LiveCodeDetail' })
 
@@ -157,7 +157,7 @@ async function loadLiveCode() {
   if (!liveCodeId) return
   loading.value = true
   try {
-    const res = (await http.get(`/biz/live-codes/${liveCodeId}`)) as any
+    const res = (await http.get(`${moduleApiPrefix('channel')}/live-codes/${liveCodeId}`)) as any
     liveCode.value = res?.data ?? res ?? {}
     stats.value = liveCode.value?.stats ?? {}
     await loadScanStats()
@@ -176,7 +176,7 @@ async function loadLiveCode() {
  */
 async function loadScanStats() {
   try {
-    const res = (await http.get(`/biz/live-codes/${liveCodeId}/stats`)) as any
+    const res = (await http.get(`${moduleApiPrefix('channel')}/live-codes/${liveCodeId}/stats`)) as any
     const data = res?.data ?? {}
     stats.value = { ...(stats.value ?? {}), ...(data.summary ?? {}), channel_stats: data.channel_stats ?? {} }
     const trend = data.daily_trend ?? []
@@ -194,7 +194,7 @@ function openGenerate() {
 async function handleGenerate() {
   generating.value = true
   try {
-    const res = (await http.post(`/biz/live-codes/${liveCodeId}/wechat-qrcode`, {
+    const res = (await http.post(`${moduleApiPrefix('channel')}/live-codes/${liveCodeId}/wechat-qrcode`, {
       scene: defaultScene.value,
       permanent: permanent.value,
     })) as any

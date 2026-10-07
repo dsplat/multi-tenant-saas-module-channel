@@ -97,7 +97,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { Grid, Link, Share, OfficeBuilding, User, Check } from '@element-plus/icons-vue'
-import { http } from '@scrm/shared'
+import { http, moduleApiPrefix } from '@multi-tenant-saas/console/shared/http'
 
 defineOptions({ name: 'LiveCodeCreate' })
 
@@ -144,7 +144,7 @@ async function handleSubmit() {
     if (form.target_url) payload.target_url = form.target_url
     if (form.expire_at) payload.expire_at = form.expire_at
 
-    await http.post('/biz/live-codes', payload)
+    await http.post(`${moduleApiPrefix('channel')}/live-codes`, payload)
     ElMessage.success('活码创建成功')
     router.push('/live-codes')
   } catch {

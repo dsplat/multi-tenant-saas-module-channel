@@ -36,7 +36,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { http, extractListResult } from '@scrm/shared'
+import { http, extractListResult, moduleApiPrefix } from '@multi-tenant-saas/console/shared/http'
 
 interface TableItem {
   id: number
@@ -55,7 +55,7 @@ const total = ref(0)
 async function loadData() {
   loading.value = true
   try {
-    const res = await http.get('/biz/live-codes')
+    const res = await http.get(`${moduleApiPrefix('channel')}/live-codes`)
     const { data, total: t } = extractListResult<any>(res)
     // 后端契约：live_code_id/channel(名称)/created_at → 前端展示字段
     tableData.value = data.map((c: any) => ({
@@ -79,7 +79,7 @@ function handleEdit(row: TableItem) {
 }
 async function handleDelete(row: TableItem) {
   await ElMessageBox.confirm(`确定删除活码「${row.name}」？`)
-  await http.delete(`/biz/live-codes/${row.id}`)
+  await http.delete(`${moduleApiPrefix('channel')}/live-codes/${row.id}`)
   ElMessage.success('已删除')
   loadData()
 }

@@ -184,14 +184,14 @@ import {
   type FormRules,
   type UploadRequestOptions,
 } from 'element-plus'
-import ProTable from '@/components/common/ProTable/ProTable.vue'
+import ProTable from '@multi-tenant-saas/console/components/common/ProTable/ProTable.vue'
 import type {
   ColumnConfig,
   SearchConfig,
   ActionConfig,
   RequestParams,
   RequestResult,
-} from '@/components/common/ProTable/ProTable.vue'
+} from '@multi-tenant-saas/console/components/common/ProTable/ProTable.vue'
 import {
   getWelcomeMessageList,
   createWelcomeMessage,
@@ -203,8 +203,8 @@ import {
   type WelcomeMessageListParams,
   type CreateWelcomeMessageData,
   type UpdateWelcomeMessageData,
-} from '@/modules/Channel/api/welcome'
-import { uploadImage } from '@/api/common/upload'
+} from '@modules/Channel/api/welcome'
+import { uploadImage } from '@multi-tenant-saas/console/api/common/upload'
 
 defineOptions({ name: 'WelcomeMessage' })
 

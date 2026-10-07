@@ -235,7 +235,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { http } from '@scrm/shared'
+import { http, moduleApiPrefix } from '@multi-tenant-saas/console/shared/http'
 
 const route = useRoute()
 const router = useRouter()
@@ -282,7 +282,7 @@ function copyUrl() {
 async function loadCallbackInfo() {
   if (isNew) return
   try {
-    const res = await http.get(`/biz/channels/${channelId}/callback-info`) as any
+    const res = await http.get(`${moduleApiPrefix('channel')}/channels/${channelId}/callback-info`) as any
     const data = res?.data ?? res
     callbackInfo.value = data?.data ?? data
   } catch { /* 回调信息为辅助展示，失败不阻塞表单编辑 */ }
@@ -292,7 +292,7 @@ async function loadChannel() {
   if (isNew) return
   loading.value = true
   try {
-    const res = await http.get(`/biz/channels/${channelId}`) as any
+    const res = await http.get(`${moduleApiPrefix('channel')}/channels/${channelId}`) as any
     const data = res?.data ?? res
     if (data) {
       form.value = {
@@ -330,13 +330,13 @@ async function handleSave() {
     delete payload.session_archive_key
     if (isNew) {
       delete payload.status
-      const res = (await http.post('/biz/channels', payload)) as any
+      const res = (await http.post(`${moduleApiPrefix('channel')}/channels`, payload)) as any
       const created = res?.data ?? res
       ElMessage.success('配置已保存，进入下一步配置消息回调')
       const newId = created?.channel_id
       router.push(newId ? `/channels/${newId}?step=1` : '/channels')
     } else {
-      await http.put(`/biz/channels/${channelId}`, payload)
+      await http.put(`${moduleApiPrefix('channel')}/channels/${channelId}`, payload)
       ElMessage.success(activeStep.value === 0 ? '应用凭证已保存，可进入下一步' : '回调参数已保存')
       await loadCallbackInfo()
     }
@@ -351,7 +351,7 @@ async function handleSave() {
 async function handleGenerateCredentials() {
   generating.value = true
   try {
-    const res = await http.post(`/biz/channels/${channelId}/generate-callback-credentials`) as any
+    const res = await http.post(`${moduleApiPrefix('channel')}/channels/${channelId}/generate-callback-credentials`) as any
     const data = res?.data ?? res
     const cred = data?.data ?? data
     form.value.callback_token = cred.callback_token
@@ -367,7 +367,7 @@ async function handleGenerateCredentials() {
 async function handleTest() {
   testing.value = true
   try {
-    const res = await http.post(`/biz/channels/${channelId}/test`) as any
+    const res = await http.post(`${moduleApiPrefix('channel')}/channels/${channelId}/test`) as any
     const data = res?.data ?? res
     if (data?.connected) {
       ElMessage.success(data.message || '连接成功')

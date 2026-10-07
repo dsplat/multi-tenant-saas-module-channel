@@ -77,7 +77,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { http, formatDate } from '@scrm/shared'
+import { http, moduleApiPrefix } from '@multi-tenant-saas/console/shared/http'
+import { formatDate } from '@multi-tenant-saas/console/shared/date'
 
 const router = useRouter()
 const loading = ref(false)
@@ -133,7 +134,7 @@ async function loadData() {
     if (filters.value.type) params.type = filters.value.type
     if (filters.value.status) params.status = filters.value.status
 
-    const res = await http.get('/biz/channels', { params }) as any
+    const res = await http.get(`${moduleApiPrefix('channel')}/channels`, { params }) as any
     const data = res?.data ?? res
 
     if (data?.data && Array.isArray(data.data)) {
@@ -161,7 +162,7 @@ function handleEdit(row: any) {
 async function handleTest(row: any) {
   row._testing = true
   try {
-    const res = await http.post(`/biz/channels/${row.channel_id}/test`) as any
+    const res = await http.post(`${moduleApiPrefix('channel')}/channels/${row.channel_id}/test`) as any
     const data = res?.data ?? res
     if (data?.connected) {
       ElMessage.success(data.message || '连接成功')
@@ -179,7 +180,7 @@ async function handleTest(row: any) {
 async function handleDelete(row: any) {
   await ElMessageBox.confirm(`确定删除渠道「${row.name}」？删除后框架侧回调凭证将一并清理。`)
   try {
-    await http.delete(`/biz/channels/${row.channel_id}`)
+    await http.delete(`${moduleApiPrefix('channel')}/channels/${row.channel_id}`)
     ElMessage.success('已删除')
     loadData()
   } catch (e: any) {
