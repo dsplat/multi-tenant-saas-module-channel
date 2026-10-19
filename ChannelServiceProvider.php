@@ -11,7 +11,9 @@ use MultiTenantSaas\Context\ExecutionIdentity;
 use MultiTenantSaas\Contracts\AuthorizationCapabilityRegistryContract;
 use MultiTenantSaas\Contracts\CapabilityRequirementResolverContract;
 use MultiTenantSaas\Contracts\ToolRegistryContract;
+use MultiTenantSaas\Contracts\WriteAdapterRegistryContract;
 use MultiTenantSaas\Events\MessageReceived;
+use MultiTenantSaas\Modules\Ai\Services\Agent\Dto\Tool;
 use MultiTenantSaas\Modules\Channel\Console\Commands\ImportWechatOfficialCredentials;
 use MultiTenantSaas\Modules\Channel\Contracts\CustomerIdentityResolverContract;
 use MultiTenantSaas\Modules\Channel\Contracts\LiveCodeScanReachStatsContract;
@@ -24,6 +26,8 @@ use MultiTenantSaas\Modules\Channel\Services\NullLiveCodeScanReachStats;
 use MultiTenantSaas\Modules\Channel\Services\Tools\CreateLiveCodeHandler;
 use MultiTenantSaas\Modules\Channel\Services\Tools\ListWelcomeMessagesHandler;
 use MultiTenantSaas\Modules\Channel\Services\Tools\SendMessageHandler;
+use MultiTenantSaas\Modules\Channel\Services\Write\CreateLiveCodeWriteAdapter;
+use MultiTenantSaas\Modules\Channel\Services\Write\SendMessageWriteAdapter;
 use MultiTenantSaas\Modules\Contracts\ModuleServiceProvider;
 use MultiTenantSaas\Modules\Wechat\Events\WechatScanEventReceived;
 use MultiTenantSaas\Support\OptionalModule;
@@ -63,15 +67,17 @@ class ChannelServiceProvider extends ModuleServiceProvider
     protected function bootModule(): void
     {
         $this->registerAuthorizationCapabilities();
+        $this->registerWriteAdapters();
         $this->registerListeners();
         $this->registerTools();
     }
 
     /**
-     * P1 工具标注 wave2：Channel 只读能力。
+     * 能力点：读（P1 wave2）+ 写（L2 写试点）。
      *
-     * operator requirement 映射到既有权限名 `channel.view`（渠道面读端点同口径）。
-     * L2 写工具（发消息 / 建活码）暂不标注（需 writeAdapter，另行迁移）。
+     * operator requirement 均映射到既有权限名，不造新权限：
+     * - 欢迎语列表 → `channel.view`（渠道面读端点同口径）；
+     * - 发消息 / 建活码 → `channel.manage`（Channel 路由写端点同口径）。
      */
     private function registerAuthorizationCapabilities(): void
     {
@@ -86,6 +92,8 @@ class ChannelServiceProvider extends ModuleServiceProvider
 
         $capabilities = [
             'common.channel.welcome_messages' => 'channel.view',
+            'common.channel.send_message' => 'channel.manage',
+            'common.channel.create_live_code' => 'channel.manage',
         ];
 
         foreach ($capabilities as $key => $permission) {
@@ -97,6 +105,34 @@ class ChannelServiceProvider extends ModuleServiceProvider
             ));
 
             $requirements?->register($key, ExecutionIdentity::TYPE_OPERATOR, ['permission' => $permission]);
+        }
+    }
+
+    /**
+     * L2 写试点：send_message / create_live_code 走显式注册的写授权适配器（ADR v2.5 §8.7）。
+     *
+     * 未注册/未声明 adapter 的写工具一律 write_unsupported，禁止回退旧 handler。
+     */
+    private function registerWriteAdapters(): void
+    {
+        if (! $this->app->bound(WriteAdapterRegistryContract::class)) {
+            return;
+        }
+
+        $adapters = [
+            SendMessageWriteAdapter::ADAPTER_KEY => SendMessageWriteAdapter::class,
+            CreateLiveCodeWriteAdapter::ADAPTER_KEY => CreateLiveCodeWriteAdapter::class,
+        ];
+
+        $registry = $this->app->make(WriteAdapterRegistryContract::class);
+
+        foreach ($adapters as $key => $class) {
+            if ($registry->get($key) !== null) {
+                continue;
+            }
+
+            $this->app->singleton($class);
+            $registry->register($key, $this->app->make($class));
         }
     }
 
@@ -214,12 +250,16 @@ class ChannelServiceProvider extends ModuleServiceProvider
                     'channel' => ['type' => 'string', 'description' => '渠道类型'],
                     'to' => ['type' => 'string', 'description' => '接收者 ID'],
                     'message' => ['type' => 'string', 'description' => '消息内容'],
-                    'message_type' => ['type' => 'string', 'description' => '消息类型: text/image/link', 'default' => 'text'],
+                    'message_type' => ['type' => 'string', 'description' => '消息类型: text/markdown', 'default' => 'text'],
+                    'operation_key' => ['type' => 'string', 'description' => '幂等键（可选；同一逻辑操作重试建议复用；1-32 位字母/数字/._:-）'],
                 ],
                 'required' => ['channel', 'to', 'message'],
             ],
             category: 'channel',
             risk: 'L2',
+            dataAction: Tool::DATA_ACTION_WRITE,
+            requiredCapability: 'common.channel.send_message',
+            writeAdapter: SendMessageWriteAdapter::ADAPTER_KEY,
         );
 
         $registry->register(
@@ -234,11 +274,15 @@ class ChannelServiceProvider extends ModuleServiceProvider
                     'channel' => ['type' => 'string', 'description' => '绑定渠道'],
                     'welcome_message' => ['type' => 'string', 'description' => '欢迎语'],
                     'tags' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => '自动标签'],
+                    'operation_key' => ['type' => 'string', 'description' => '幂等键（可选；同一逻辑操作重试建议复用；1-32 位字母/数字/._:-）'],
                 ],
                 'required' => ['name', 'channel'],
             ],
             category: 'channel',
             risk: 'L2',
+            dataAction: Tool::DATA_ACTION_WRITE,
+            requiredCapability: 'common.channel.create_live_code',
+            writeAdapter: CreateLiveCodeWriteAdapter::ADAPTER_KEY,
         );
 
         $registry->register(

@@ -19,7 +19,7 @@ class LiveCodeStrategyService implements LiveCodeStrategyContract
      * 分配活码 — 轮询策略
      *
      * @param  int  $tenantId  租户ID
-     * @param  array  $data  包含 type, channel, target_urls (员工列表)
+     * @param  array  $data  包含 type, channel, target_urls (员工列表), metadata (可选透传)
      * @return array 分配结果
      */
     public function assign($tenantId, array $data): array
@@ -29,6 +29,8 @@ class LiveCodeStrategyService implements LiveCodeStrategyContract
         $type = $data['type'] ?? 'employee';
         $channel = $data['channel'] ?? 'wechat';
         $targetUrls = $data['target_urls'] ?? [];
+        // 业务透传元数据（如 name / welcome_message / tags）；策略键由本服务覆盖，调用方不得改写
+        $metadata = is_array($data['metadata'] ?? null) ? $data['metadata'] : [];
 
         // 兼容单个 target_url：若未提供 target_urls 数组，则将单个 target_url 包装为数组
         if (empty($targetUrls) && ! empty($data['target_url'])) {
@@ -54,10 +56,10 @@ class LiveCodeStrategyService implements LiveCodeStrategyContract
             'target_url' => $assignedTarget,
             'expire_at' => $data['expire_at'] ?? null,
             'status' => 'active',
-            'metadata' => [
+            'metadata' => array_merge($metadata, [
                 'strategy' => 'round_robin',
                 'assigned_at' => now()->toIso8601String(),
-            ],
+            ]),
         ]);
 
         return $liveCode->toArray();
