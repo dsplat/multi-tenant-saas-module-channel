@@ -20,7 +20,7 @@ class LockCodeService
 
     public function bind($tenantId, $codeId, $userId): bool
     {
-        TenantContext::setTenantId((string) $tenantId);
+        TenantContext::assertTenantId($tenantId);
 
         $liveCode = LiveCode::where('live_code_id', $codeId)
             ->where('tenant_id', $tenantId)
@@ -54,7 +54,7 @@ class LockCodeService
 
     public function getScanStats($tenantId, $codeId, ?string $period = null): array
     {
-        TenantContext::setTenantId((string) $tenantId);
+        TenantContext::assertTenantId($tenantId);
 
         $liveCode = LiveCode::where('live_code_id', $codeId)
             ->where('tenant_id', $tenantId)
@@ -92,7 +92,7 @@ class LockCodeService
 
     public function recordScan($tenantId, $codeId, array $scanData): void
     {
-        TenantContext::setTenantId((string) $tenantId);
+        TenantContext::assertTenantId($tenantId);
 
         // 触达账由 Marketing 侧监听器落库（本服务不再直连 ReachEvent 模型）
         LiveCodeScanRecorded::dispatch((int) $tenantId, $codeId, $scanData);

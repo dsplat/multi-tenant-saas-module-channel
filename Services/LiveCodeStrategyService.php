@@ -24,7 +24,7 @@ class LiveCodeStrategyService implements LiveCodeStrategyContract
      */
     public function assign($tenantId, array $data): array
     {
-        TenantContext::setTenantId((string) $tenantId);
+        TenantContext::assertTenantId($tenantId);
 
         $type = $data['type'] ?? 'employee';
         $channel = $data['channel'] ?? 'wechat';

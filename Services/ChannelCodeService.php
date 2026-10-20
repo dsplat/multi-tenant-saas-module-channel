@@ -60,7 +60,7 @@ class ChannelCodeService
      */
     public function createChannelCode($tenantId, array $data): array
     {
-        TenantContext::setTenantId((string) $tenantId);
+        TenantContext::assertTenantId($tenantId);
 
         $liveCode = LiveCode::create([
             'live_code_id' => $this->idGenerator->generate(),
@@ -107,7 +107,7 @@ class ChannelCodeService
      */
     public function attachWechatQrcode($tenantId, $liveCodeId, array $options = []): array
     {
-        TenantContext::setTenantId((string) $tenantId);
+        TenantContext::assertTenantId($tenantId);
 
         $liveCode = LiveCode::where('live_code_id', $liveCodeId)
             ->where('tenant_id', $tenantId)
@@ -154,7 +154,7 @@ class ChannelCodeService
 
     public function createStoreCode($tenantId, array $data): array
     {
-        TenantContext::setTenantId((string) $tenantId);
+        TenantContext::assertTenantId($tenantId);
 
         $liveCode = LiveCode::create([
             'live_code_id' => $this->idGenerator->generate(),
@@ -178,7 +178,7 @@ class ChannelCodeService
 
     public function getStats($tenantId, $codeId): array
     {
-        TenantContext::setTenantId((string) $tenantId);
+        TenantContext::assertTenantId($tenantId);
 
         $liveCode = LiveCode::where('live_code_id', $codeId)
             ->where('tenant_id', $tenantId)
@@ -202,7 +202,7 @@ class ChannelCodeService
 
     public function expire($tenantId, $codeId): bool
     {
-        TenantContext::setTenantId((string) $tenantId);
+        TenantContext::assertTenantId($tenantId);
 
         $liveCode = LiveCode::where('live_code_id', $codeId)
             ->where('tenant_id', $tenantId)

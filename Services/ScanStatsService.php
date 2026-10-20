@@ -180,7 +180,7 @@ class ScanStatsService
      */
     public function getRanking($tenantId, array $dateRange = [], string $sortBy = 'scans', $limit = 10): array
     {
-        TenantContext::setTenantId((string) $tenantId);
+        TenantContext::assertTenantId($tenantId);
 
         $liveCodes = LiveCode::where('tenant_id', $tenantId)
             ->active()

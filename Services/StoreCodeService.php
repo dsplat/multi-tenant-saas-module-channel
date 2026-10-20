@@ -43,7 +43,7 @@ class StoreCodeService extends LiveCodeStrategyService
      */
     public function createStoreCode($tenantId, array $params): array
     {
-        TenantContext::setTenantId((string) $tenantId);
+        TenantContext::assertTenantId($tenantId);
 
         $stores = $params['stores'] ?? [];
         $strategy = $params['strategy'] ?? self::STRATEGY_NEAREST;
@@ -106,7 +106,7 @@ class StoreCodeService extends LiveCodeStrategyService
      */
     public function resolveStore($tenantId, $codeId, array $geoLocation): ?array
     {
-        TenantContext::setTenantId((string) $tenantId);
+        TenantContext::assertTenantId($tenantId);
 
         $liveCode = LiveCode::where('live_code_id', $codeId)
             ->where('tenant_id', $tenantId)
