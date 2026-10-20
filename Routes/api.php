@@ -11,7 +11,7 @@ use MultiTenantSaas\Modules\Channel\Http\Controllers\WelcomeMessageController;
 // [api, auth:sanctum, VerifyOperatorTenant, tenant.ensure]。故此处路由路径不含前缀段。
 //
 // P0 授权门（ADR v2.5）：读 → channel.view；写/凭证/回调配置 → channel.manage。
-// 权限名由 database/migrations/2026_10_19_000001_add_missing_tenant_permissions.php 入库。
+// 权限名由 framework_core_data 的 2026_10_19_000001_add_missing_tenant_permissions 步骤入库。
 
 // 渠道管理：读
 Route::prefix('channels')->middleware('rbac.permission:channel.view')->group(function () {
