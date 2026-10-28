@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MultiTenantSaas\Modules\Channel\Services;
 
+use MultiTenantSaas\Context\ServiceDomain;
 use MultiTenantSaas\Modules\Channel\Models\Channel;
 use MultiTenantSaas\Modules\Domain\Services\DomainService;
 use MultiTenantSaas\Modules\Infrastructure\Models\Tenant;
@@ -22,9 +23,9 @@ use MultiTenantSaas\Modules\Infrastructure\Models\TenantSetting;
  * 域名选择优先级：
  *   1. 完全自定义域名 approved（tenants.domain 非空 且 domain_status=approved）
  *      → https://{domain}，可通过企微主体校验
- *   2. 平台统一回调域（config('auth.oauth.callback_domain')，如 auth.neihang.com）
+ *   2. 平台集成服务域（ServiceDomain::SERVICE_INTEGRATION，基座 / 旧键兜底）
  *      → 未启用自定义域名时的临时展示/兜底，前端须硬提示主体校验风险
- *   3. 兜底当前请求域（fallbackHost，平台未配置统一回调域时）
+ *   3. 兜底当前请求域（fallbackHost，平台未配置集成服务域时）
  */
 class ChannelCallbackService
 {
@@ -59,11 +60,11 @@ class ChannelCallbackService
         );
         $customDomainActive = $domain !== null && $domainStatus === DomainService::STATUS_APPROVED;
 
-        // 回调域名：完全自定义域名优先（企微主体校验要求）→ 平台统一回调域 → 请求域兜底
+        // 回调域名：完全自定义域名优先（企微主体校验要求）→ 平台集成服务域 → 请求域兜底
         $host = $customDomainActive
             ? $domain
-            : (string) config('auth.oauth.callback_domain', '');
-        if ($host === '') {
+            : app(ServiceDomain::class)->host(ServiceDomain::SERVICE_INTEGRATION);
+        if ($host === null) {
             $host = $fallbackHost;
         }
 
